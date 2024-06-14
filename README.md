@@ -4,9 +4,12 @@ Pulse Sandbox
 =============
 
 Once you have Pulse running, you can go to
-- [Hello.fst](Hello.fst)
-- [src/PulseByExample.fst](src/PulseByExample.fst)
-- [src/PulseTutorial.SpinLock.fst](src/PulseTutorial.SpinLock.fst)
+- [Hello.fst](Hello.fst): basic file to check the setup works
+- [src/PulseByExample.md](src/PulseByExample.md): Pulse primer with explanations
+- [src/PulseByExample.fst](src/PulseByExample.fst): File to follow along
+- [src/PulseTutorial.SpinLock.fst](src/PulseTutorial.SpinLock.fst): Implementation of a basic spinlock
+
+The files in `src/tutorial/` showcase more features of Pulse.
 
 Getting started (with Codespaces)
 ---------------------------------
