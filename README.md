@@ -52,7 +52,7 @@ Basic commands
 The VS Code instance will have the [F* VS Code extension installed](https://github.com/FStarLang/fstar-vscode-assistant). You can read the manual there,
 but the most important things to know are the following:
 
-* Fly-check on opening: When a file is opened, F* will, by default, 
+* Fly-check on opening: When a file is opened, F* will, by default,
   fly-check the entire entire contents of the file,
   stopping at the first error. Any errors will be reported in the problem pane
   and as "squigglies". Symbols are resolved and hover and jump-to-definition
@@ -77,6 +77,6 @@ but the most important things to know are the following:
 * 'F12' will jump to the definition of the symbol under the cursor.
 
 Note, although checking the document proceeds in a linear, top-down fashion, at no point is any
-fragment of the document locked. You can keep editing a document while F* is checking some prefix 
+fragment of the document locked. You can keep editing a document while F* is checking some prefix
 of it.
 

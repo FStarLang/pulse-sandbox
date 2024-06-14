@@ -19,7 +19,7 @@ module PulseByExample
 module PM = Pulse.Main
 open Pulse.Lib.Core
 
-(* 
+(*
   Things to note:
   - syntax extension notation
   - 1 or more arguments
@@ -33,7 +33,7 @@ fn five ()
   requires emp
   returns n:int
   ensures pure (n == 5)
-{ 
+{
   fstar_five
 }
 ```
@@ -45,7 +45,7 @@ fn five_alt ()
   requires emp
   returns n:(n:int { n == 5 })
   ensures emp
-{ 
+{
   5
 }
 ```
@@ -53,7 +53,7 @@ fn five_alt ()
 open Pulse.Lib.Reference
 module R = Pulse.Lib.Reference
 
-(* 
+(*
   Things to note:
   - separating conjunction
   - tick for erased, implicit values
@@ -82,7 +82,7 @@ module A = Pulse.Lib.Array
 module SZ = FStar.SizeT
 open Pulse.Lib.BoundedIntegers
 
-(* 
+(*
   Things to note:
   - heap array, read and write
   - exists* and forall in spec
@@ -95,12 +95,12 @@ fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
     A.pts_to a 's0 **
     pure (Seq.length 's0 == v n /\ i < n /\ j < n)
   ensures
-    exists* s. 
+    exists* s.
     A.pts_to a s **
     pure (Seq.length 's0 == v n /\ Seq.length s == v n /\ i < n /\ j < n
        /\ (forall (k:nat). k < v n /\ k <> v i /\ k <> v j ==> Seq.index 's0 k == Seq.index s k)
        /\ Seq.index 's0 (v i) == Seq.index s (v j)
-       /\ Seq.index 's0 (v j) == Seq.index s (v i))  
+       /\ Seq.index 's0 (v j) == Seq.index s (v i))
 {
   let vi = a.(i);
   let vj = a.(j);
@@ -109,7 +109,7 @@ fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
 }
 ```
 
-(* 
+(*
   Things to note:
   - control flow: while loop, if
   - mutable local reference, read and write

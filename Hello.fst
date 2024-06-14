@@ -8,5 +8,5 @@ fn test (x:unit)
   ensures emp
 {
   ()
-} 
+}
 ```

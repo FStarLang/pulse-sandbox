@@ -42,7 +42,7 @@ requires lock_alive l
 ensures  lock_alive l ** p
 {
   unfold (lock_alive l);
-  let b = 
+  let b =
     with_invariants l.i
     returns b:bool
     ensures maybe b p ** inv l.i (lock_inv l.r p)
@@ -50,7 +50,7 @@ ensures  lock_alive l ** p
       unfold lock_inv;
       let b = cas l.r 0ul 1ul;
       if b
-      { 
+      {
         elim_cond_true _ _ _;
         with _b. rewrite (maybe _b p) as p;
         fold (maybe false p);
