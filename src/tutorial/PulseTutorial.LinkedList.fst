@@ -1,5 +1,6 @@
 module PulseTutorial.LinkedList
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module S = Pulse.Lib.Stick.Util
 module FA = Pulse.Lib.Forall.Util
 open FStar.List.Tot
@@ -30,7 +31,6 @@ let rec is_list #t (x:llist t) (l:list t)
 //is_list$
 
 //boilerplate$
-```pulse
 ghost
 fn elim_is_list_nil (#t:Type0) (x:llist t)
 requires is_list x l ** pure (l == [])
@@ -39,9 +39,7 @@ ensures pure (x == None)
    rewrite each l as Nil #t;
    unfold (is_list x [])
 }
-```
 
-```pulse
 ghost
 fn intro_is_list_nil (#t:Type0) (x:llist t)
 requires pure (x == None)
@@ -49,9 +47,7 @@ ensures is_list x []
 {
     fold (is_list x []);
 }
-```
 
-```pulse
 ghost
 fn elim_is_list_cons (#t:Type0) (x:llist t) (l:list t) (head:t) (tl:list t)
 requires is_list x l ** pure (l == head::tl)
@@ -72,10 +68,8 @@ ensures (
     vprop_equiv_norm
     ()
 }
-```
 
 
-```pulse
 ghost
 fn intro_is_list_cons (#t:Type0) (x:llist t) (v:node_ptr t) (#node:node t) (#tl:list t)
 requires
@@ -95,7 +89,6 @@ ensures
         vprop_equiv_norm
         ()
 }
-```
 //boilerplate$
 
 //is_list_cases$
@@ -110,7 +103,6 @@ let is_list_cases #t (x:llist t) (l:list t)
       is_list n.tail tl
 //is_list_cases$
 
-```pulse //cases_of_is_list$
 ghost
 fn cases_of_is_list #t (x:llist t) (l:list t)
 requires is_list x l
@@ -133,9 +125,7 @@ ensures is_list_cases x l
     }
   }
 }
-```
 
-```pulse //is_list_case_none$
 ghost
 fn is_list_case_none (#t:Type) (x:llist t) (#l:list t)
 requires is_list x l ** pure (x == None)
@@ -146,10 +136,8 @@ ensures is_list x l ** pure (l == [])
   unfold (is_list_cases None l);
   intro_is_list_nil x;
 }
-```
 
 
-```pulse //is_list_case_some$
 ghost
 fn is_list_case_some (#t:Type) (x:llist t) (v:node_ptr t) (#l:list t)
 requires is_list x l ** pure (x == Some v)
@@ -163,10 +151,8 @@ ensures
   rewrite each x as (Some v);
   unfold (is_list_cases (Some v) l);
 }
-```
 
 
-```pulse //length$
 fn rec length (#t:Type0) (x:llist t)
 requires is_list x 'l
 returns n:nat
@@ -188,9 +174,7 @@ ensures is_list x 'l ** pure (n == List.Tot.length 'l)
     }
   }
 }
-```
 
-```pulse
 fn rec length_tail (#t:Type0) (x:llist t) (k:nat)
 requires is_list x 'l
 returns n:nat
@@ -212,12 +196,10 @@ ensures is_list x 'l ** pure (n == k + List.Tot.length 'l)
     }
   }
 }
-```
 
 module I = Pulse.Lib.Stick.Util
 open I
 
-```pulse //tail_for_cons$
 ghost
 fn tail_for_cons (#t:Type) (v:node_ptr t) (#n:node t) (tl:erased (list t))
 requires
@@ -236,10 +218,8 @@ ensures
   };
   I.intro _ _ _ aux;
 }
-```
 
 
-```pulse //tail$
 fn tail (#t:Type) (x:llist t)
 requires is_list x 'l ** pure (Some? x)
 returns y:llist t
@@ -256,9 +236,7 @@ ensures exists* tl.
     tail_for_cons np tl;
     nd.tail
 }
-```
 
-```pulse //length_iter$
 fn length_iter (#t:Type) (x: llist t)
 requires is_list x 'l
 returns n:nat
@@ -297,9 +275,7 @@ ensures is_list x 'l ** pure (n == List.Tot.length 'l)
   let n = !ctr;
   n
 }
-```
 
-```pulse //append$
 fn rec append (#t:Type0) (x y:llist t)
 requires is_list x 'l1 ** is_list y 'l2 ** pure (Some? x)
 ensures is_list x ('l1 @ 'l2)
@@ -323,10 +299,8 @@ ensures is_list x ('l1 @ 'l2)
     }
   }
 }
-```
 
 
-```pulse //tail_alt$
 fn tail_alt (#t:Type) (x:llist t)
 requires is_list x 'l ** pure (Some? x)
 returns y:llist t
@@ -350,9 +324,7 @@ ensures exists* hd tl.
   FA.intro_forall_imp _ _ _ aux;
   node.tail
 }
-```
 
-```pulse
 fn is_last_cell (#t:Type) (x:llist t)
 requires is_list x 'l ** pure (Some? x)
 returns b:bool
@@ -377,10 +349,8 @@ ensures is_list x 'l ** pure (b == (List.Tot.length 'l = 1))
     }
   }
 }
-```
 
 
-```pulse //append_at_last_cell$
 fn append_at_last_cell (#t:Type) (x y:llist t)
 requires
   is_list x 'l1 **
@@ -398,9 +368,7 @@ ensures
   rewrite each y as ({node with tail = y}).tail in (is_list y 'l2);
   intro_is_list_cons x np;
 }
-```
 
-```pulse //non_empty_list$
 ghost
 fn non_empty_list (#t:Type0) (x:llist t)
 requires is_list x 'l ** pure (Cons? 'l)
@@ -412,10 +380,8 @@ ensures is_list x 'l ** pure (Some? x)
     rewrite each tail as n.tail;
     intro_is_list_cons x v #n #tl;
 }
-```
 
 
-```pulse //append_iter$
 fn append_iter (#t:Type) (x y:llist t)
 requires is_list x 'l1 ** is_list y 'l2 ** pure (Some? x)
 ensures is_list x ('l1 @ 'l2)
@@ -474,4 +440,3 @@ ensures is_list x ('l1 @ 'l2)
   List.Tot.Properties.append_assoc pfx sfx 'l2;
   ()
 }
-```

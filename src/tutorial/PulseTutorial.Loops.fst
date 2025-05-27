@@ -15,9 +15,9 @@
 *)
 
 module PulseTutorial.Loops
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 
-```pulse //count_down$
 fn count_down (x:ref nat)
 requires pts_to x 'v
 ensures pts_to x 0
@@ -43,9 +43,7 @@ ensures pts_to x 0
         }
     }
 }
-```
 
-```pulse //count_down2$
 fn count_down2 (x:ref nat)
 requires pts_to x 'v
 ensures pts_to x 0
@@ -68,9 +66,7 @@ ensures pts_to x 0
         pure (b == false ==> v == 0)
     { () }
 }
-```
 
-```pulse //count_down_loopy$
 fn count_down_loopy (x:ref nat)
 requires pts_to x 'v
 ensures pts_to x 0
@@ -93,10 +89,8 @@ ensures pts_to x 0
         pure (b == false ==> v == 0)
     { () }
 }
-```
 open FStar.Mul
 
-```pulse //multiply_by_repeated_addition$
 fn multiply_by_repeated_addition (x y:nat)
     requires emp
     returns z:nat
@@ -123,7 +117,6 @@ fn multiply_by_repeated_addition (x y:nat)
     };
     !acc
 }
-```
 
 //SNIPPET_START: sum$
 let rec sum (n:nat)
@@ -138,7 +131,6 @@ let rec sum_lemma (n:nat)
 
 //SNIPPET_START: isum$
 #push-options "--z3cliopt 'smt.arith.nl=false'"
-```pulse
 fn isum (n:nat)
 requires emp
 returns z:nat
@@ -166,7 +158,6 @@ ensures pure ((n * (n + 1) / 2) == z)
     sum_lemma n; //call an F* lemma inside Pulse
     !acc;
 }
-```
 #pop-options
 //SNIPPET_END: isum$
 
@@ -176,7 +167,6 @@ let rec fib (n:nat) : nat =
   else fib (n - 1) + fib (n - 2)
 //fib$
 
-```pulse //fib_rec$
 fn rec fib_rec (n:pos) (out:ref (nat & nat))
 requires
     pts_to out 'v
@@ -202,9 +192,7 @@ ensures
     out := (snd v, fst v + snd v);
   }
 }
-```
 
-```pulse //fib_loop$
 fn fib_loop (k:pos)
   requires emp
   returns r:nat
@@ -239,7 +227,6 @@ fn fib_loop (k:pos)
   };
   !j
 }
-```
 
 
 
@@ -254,7 +241,6 @@ open Pulse.Lib.BoundedIntegers
 module U32 = FStar.UInt32
 
 
-```pulse
 fn fibonacci32 (k:U32.t)
   requires pure (0ul < k /\ fib (v k) < pow2 32)
   returns r:U32.t
@@ -288,4 +274,3 @@ fn fibonacci32 (k:U32.t)
   };
   !j
 }
-```

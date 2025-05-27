@@ -1,10 +1,10 @@
 module ParallelIncrement
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module U32 = FStar.UInt32
 module L = Pulse.Lib.SpinLock
 module GR = Pulse.Lib.GhostReference
 module R = Pulse.Lib.Reference
-```pulse
 fn increment (x: ref nat)
              (l:L.lock (exists* v. pts_to x #one_half v))
 requires pts_to x #one_half 'i
@@ -20,10 +20,8 @@ ensures pts_to x #one_half ('i + 1)
     L.release l;
     with p _v. rewrite (pts_to x #p _v) as (pts_to x #one_half _v);
 }
-```
 
 #push-options "--print_implicits --ext 'pulse:env_on_err' --print_full_names"
-```pulse
 fn increment_f (x: ref nat)
                (#pred #qpred: nat -> vprop)
                (l:L.lock (exists* v. pts_to x #one_half v ** pred v))
@@ -47,9 +45,7 @@ ensures pts_to x #one_half ('i + 1) ** qpred ('i + 1)
     with p _v. rewrite (pts_to x #p _v) as (pts_to x #one_half _v);
     rewrite (qpred (vx + 1)) as (qpred ('i + 1));
 }
-```
 
-```pulse
 fn increment_f2 (x: ref int)
                 (#pred #qpred: int -> vprop)
                 (l:L.lock (exists* v. pts_to x v ** pred v))
@@ -66,10 +62,8 @@ ensures qpred ('i + 1)
     f vx 'i;
     L.release l;
 }
-```
 
 #push-options "--warn_error -249"
-```pulse
 fn parallel_increment
         (x: ref int)
 requires pts_to x 'i
@@ -143,7 +137,6 @@ ensures pts_to x ('i + 2)
     GR.free left;
     GR.free right;
 }
-```
 
 assume
 val atomic_increment (r:ref int) (#i:erased int)
@@ -155,7 +148,6 @@ module F = Pulse.Lib.FlippableInv
 
 let test #p (l:inv p) = assert (not (mem_inv emp_inames l))
 let pts_to_refine #a (x:ref a) (p:a -> vprop) = exists* v. pts_to x v ** p v
-```pulse
 fn atomic_increment_f2
         (x: ref int)
         (#pred #qpred: int -> vprop)
@@ -174,12 +166,10 @@ ensures qpred ('i + 1)
     fold pts_to_refine;
   }
 }
-```
 
 open Pulse.Lib.Stick.Util
 module FA = Pulse.Lib.Forall.Util
 module I = Pulse.Lib.Stick.Util
-```pulse
 fn atomic_increment_f3
         (x: ref int)
         (#pred #qpred: int -> vprop)
@@ -204,9 +194,7 @@ ensures qpred ('i + 1)
     fold pts_to_refine;
   }
 }
-```
 #pop-options
-```pulse
 fn atomic_increment_f4
         (x: ref int)
         (#invp : vprop)
@@ -228,7 +216,6 @@ ensures qpred ('i + 1)
     I.elim (exists* v. pts_to x v ** pred v) invp;
   }
 }
-```
 
 
 assume
@@ -246,7 +233,6 @@ val cas (r:ref int) (u v:int) (#i:erased int)
              (pts_to r i))
 
 
-```pulse
 fn atomic_increment_f5
         (x: ref int)
         (#invp #tok : vprop)
@@ -321,11 +307,9 @@ ensures qpred ('i + 1)
   unfold cond;
 }
 
-```
 
 module C = Pulse.Lib.CancellableInvariant
 
-```pulse
 fn atomic_increment_f6
         (x: ref int)
         (#p:_) (#t:erased C.token)
@@ -344,10 +328,8 @@ ensures qpred ('i + 1) ** C.active p t
     C.restore (exists* v. pts_to x v ** pred v)
   }
 }
-```
 
 
-```pulse
 fn parallel_increment_inv
         (x: ref int)
 requires pts_to x 'i
@@ -430,4 +412,3 @@ ensures pts_to x ('i + 2)
     GR.free right;
 
 }
-```

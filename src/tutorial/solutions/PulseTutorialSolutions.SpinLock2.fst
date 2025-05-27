@@ -1,5 +1,6 @@
 module PulseTutorialSolutions.SpinLock2
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module Box = Pulse.Lib.Box
 module U32 = FStar.UInt32
 module GR = Pulse.Lib.GhostReference
@@ -25,7 +26,6 @@ type lock (p:vprop) = {
 
 let locked #p (l:lock p) = GR.pts_to l.gr #one_half 1ul
 
-```pulse
 fn new_lock (p:vprop)
 requires p
 returns l:lock p
@@ -40,10 +40,8 @@ ensures emp
    let l = { r = Box.box_to_ref r; gr; i };
    l
 }
-```
 
 
-```pulse
 fn rec acquire #p (l:lock p)
 requires emp
 ensures p ** locked l
@@ -80,9 +78,7 @@ ensures p ** locked l
   if b { with q. rewrite (maybe b q) as q; }
   else { with q. rewrite (maybe b q) as emp; acquire l }
 }
-```
 
-```pulse
 fn release #p (l:lock p)
 requires p ** locked l
 ensures emp
@@ -100,9 +96,7 @@ ensures emp
   }
 
 }
-```
 
-```pulse
 fn acquire_loop #p (l:lock p)
 requires emp
 ensures p ** locked l
@@ -153,4 +147,3 @@ ensures p ** locked l
   };
   with _b _q. rewrite (maybe _b _q) as _q;
 }
-```

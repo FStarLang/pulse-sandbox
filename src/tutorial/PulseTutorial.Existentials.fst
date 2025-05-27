@@ -15,10 +15,10 @@
 *)
 
 module PulseTutorial.Existentials
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 open FStar.Mul
 
-```pulse //assign$
 fn assign #a (x:ref a) (v:a)
 requires
   exists* w. pts_to x w
@@ -27,11 +27,9 @@ ensures
 {
   x := v
 }
-```
 
 //SNIPPET_START: incr_fail$
 [@@expect_failure]
-```pulse
 fn incr #a (x:ref int)
 requires
   exists* w0. pts_to x w
@@ -41,10 +39,8 @@ ensures
   let w = !x
   x := w + 1
 }
-```
 //SNIPPET_END: incr_fail$
 
-```pulse //make_even$
 fn make_even (x:ref int)
 requires
   exists* w0. pts_to x w0
@@ -54,9 +50,7 @@ ensures
   let v = !x;
   x := v + v;
 }
-```
 
-```pulse //make_even_explicit$
 fn make_even_explicit (x:ref int)
 requires
   exists* w0. pts_to x w0
@@ -70,9 +64,7 @@ ensures
   exists* w1. pts_to x w1 ** pure (w1 % 2 == 0)
   with (v + v);
 }
-```
 
-```pulse //make_even_explicit_alt$
 fn make_even_explicit_alt (x y:ref int)
 requires
   exists* wx wy. pts_to x wx ** pts_to y wy ** pure (wx % 2 == wy % 2)
@@ -86,9 +78,7 @@ ensures
   introduce exists* wx' wy'. pts_to x wx' ** pts_to y wy' ** pure (wx' % 2 == 0)
   with (vx + vy) vy;
 }
-```
 
-```pulse //call_make_even$
 fn call_make_even (x:ref int)
 requires
   pts_to x 'v
@@ -97,4 +87,3 @@ ensures
 {
   make_even x;
 }
-```

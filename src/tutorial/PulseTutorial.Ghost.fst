@@ -15,12 +15,12 @@
 *)
 
 module PulseTutorial.Ghost
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 
 
 //incr_erased_non_ghost$
 [@@expect_failure]
-```pulse
 fn incr_erased_non_ghost (x:erased int)
 requires emp
 returns y:int
@@ -29,10 +29,8 @@ ensures emp ** pure (y == x + 1)
   let x = reveal x;
   (x + 1)
 }
-```
 //incr_erased_non_ghost$
 
-```pulse //incr_erased$
 ghost
 fn incr_erased (x:erased int)
 requires emp
@@ -42,11 +40,9 @@ ensures emp ** pure (y == x + 1)
   let x = reveal x;
   (x + 1)
 }
-```
 
 //try_use_incr_erased$
 [@@expect_failure]
-```pulse
 fn use_incr_erased (x:erased int)
 requires emp
 returns y:int
@@ -54,10 +50,8 @@ ensures emp ** pure (y == x + 1)
 {
   incr_erased x;
 }
-```
 //try_use_incr_erased$
 
-```pulse
 //use_incr_erased$
 fn use_incr_erased (x:erased int)
 requires emp
@@ -76,10 +70,8 @@ ensures emp ** pure (y == x + 1)
   wrap x
 }
 //use_incr_erased$
-```
 
 
-```pulse
 //use_incr_erased_alt$
 fn use_incr_erased_alt (x:erased int)
 requires emp
@@ -88,9 +80,7 @@ ensures emp ** pure (y == x + 1)
 {
   call_ghost incr_erased x;
 }
-```
 
-```pulse //add_erased$
 ghost
 fn add_erased (x y:erased int)
 requires emp
@@ -101,9 +91,7 @@ ensures emp ** pure (z == x + y)
   let y = reveal y;
   (x + y)
 }
-```
 
-```pulse //use_add_erased$
 fn use_add_erased (x y:erased int)
 requires emp
 returns z:erased int
@@ -111,9 +99,7 @@ ensures emp ** pure (z == x + y)
 {
   call_ghost (add_erased x) y
 }
-```
 
-```pulse //add_erased_erased$
 ghost
 fn add_erased_erased (x y:erased int)
 requires emp
@@ -124,11 +110,9 @@ ensures emp ** pure (z == x + y)
   let y = reveal y;
   hide (x + y)
 }
-```
 
 let id p = p
 
-```pulse
 //__rewrite_sig$
 ghost
 fn __rewrite (p q:vprop)
@@ -138,9 +122,7 @@ ensures q
 {
   rewrite p as q;
 }
-```
 
-```pulse
 //intro_exists_sig$
 ghost
 fn intro_exists (#a:Type0) (p:a -> vprop) (x:erased a)
@@ -150,7 +132,6 @@ ensures exists* x. p x
 {
   ()
 }
-```
 
 //all_at_most$
 let rec all_at_most (l:list (ref nat)) (n:nat)
@@ -160,7 +141,6 @@ let rec all_at_most (l:list (ref nat)) (n:nat)
   | hd::tl -> exists* (i:nat). pts_to hd i ** pure (i <= n) ** all_at_most tl n
 //all_at_most$
 
-```pulse  //elim_all_at_most_nil$
 ghost
 fn elim_all_at_most_nil (l:list (ref nat)) (n:nat)
 requires all_at_most l n ** pure (l == [])
@@ -169,9 +149,7 @@ ensures emp
   rewrite (all_at_most l n) as (all_at_most [] n);
   unfold (all_at_most [] n);
 }
-```
 
-```pulse //intro_all_at_most_nil$
 ghost
 fn intro_all_at_most_nil (l:list (ref nat)) (n:nat)
 requires pure (l == [])
@@ -180,10 +158,8 @@ ensures all_at_most l n
   fold (all_at_most [] n);
   rewrite each (Nil #(ref nat)) as l;
 }
-```
 
 
-```pulse //elim_all_at_most_cons$
 ghost
 fn elim_all_at_most_cons (l:list (ref nat)) (hd:ref nat) (tl:list (ref nat)) (n:nat)
 requires all_at_most l n ** pure (l == hd :: tl)
@@ -194,9 +170,7 @@ ensures exists* (i:nat). pts_to hd i ** pure (i <= n) ** all_at_most tl n
              (exists* (i:nat). pts_to hd i ** pure (i <= n) ** all_at_most tl n)
              vprop_equiv_norm ();
 }
-```
 
-```pulse //intro_all_at_most_cons$
 ghost
 fn intro_all_at_most_cons (l:list (ref nat)) (hd:ref nat) (tl:list (ref nat)) (n:nat)
 requires pts_to hd 'i ** all_at_most tl n ** pure ('i <= n) ** pure (l == hd :: tl)
@@ -207,10 +181,8 @@ ensures all_at_most l n
              vprop_equiv_norm ();
   rewrite each (hd::tl) as l;
 }
-```
 
 
-```pulse //weaken_at_most$
 ghost
 fn rec weaken_at_most (l:list (ref nat)) (n:nat) (m:nat)
 requires all_at_most l n ** pure (n <= m)
@@ -229,10 +201,8 @@ decreases l
     }
   }
 }
-```
 
 module GR = Pulse.Lib.GhostReference
-```pulse //new_ghost_ref$
 ghost
 fn new_ghost_ref #a (x:a)
 requires emp
@@ -241,9 +211,7 @@ ensures GR.pts_to r x
 {
   GR.alloc x;
 }
-```
 
-```pulse //use_new_ghost_ref$
 fn use_new_ghost_ref (x:ref nat)
 requires pts_to x 'v
 returns r:GR.ref nat
@@ -252,14 +220,12 @@ ensures pts_to x 'v ** GR.pts_to r 'v
   let v = !x;
   new_ghost_ref v
 }
-```
 
 //correlated$
 let correlated #a (x:ref a) (y:GR.ref a) (v:a)=
   pts_to x v ** GR.pts_to y #one_half v
 //correlated$
 
-```pulse
 //use_temp_sig$
 fn use_temp (x:ref int) (y:GR.ref int)
 requires exists* v0. correlated x y v0
@@ -274,10 +240,8 @@ ensures exists* v1. correlated x y v1
   fold correlated;
 }
 //use_temp_body$
-```
 
 
-```pulse //use_correlated$
 fn use_correlated ()
 requires emp
 ensures emp
@@ -293,4 +257,3 @@ ensures emp
   assert (pts_to x 17);
   GR.free g;
 }
-```

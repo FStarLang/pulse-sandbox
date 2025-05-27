@@ -1,11 +1,11 @@
 module PulseTutorial.ParallelIncrement
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module U32 = FStar.UInt32
 module L = Pulse.Lib.SpinLock
 module GR = Pulse.Lib.GhostReference
 module R = Pulse.Lib.Reference
 
-```pulse //par$
 fn par (#pf #pg #qf #qg:_)
        (f: unit -> stt unit pf (fun _ -> qf))
        (g: unit -> stt unit pg (fun _ -> qg))
@@ -19,9 +19,7 @@ ensures qf ** qg
   { g () };
   ()
 }
-```
 
-```pulse
 fn incr2 (x y:ref int)
 requires pts_to x 'i ** pts_to y 'j
 ensures pts_to x ('i + 1) ** pts_to y ('j + 1)
@@ -35,11 +33,9 @@ ensures pts_to x ('i + 1) ** pts_to y ('j + 1)
   };
   par (fun _ -> incr x) (fun _ -> incr y);
 }
-```
 
 
 [@@expect_failure]
-```pulse
 fn attempt0 (x:ref int)
 requires pts_to x 'i
 ensures pts_to x ('i + 2)
@@ -53,9 +49,7 @@ ensures pts_to x ('i + 2)
   };
   par (fun _ -> incr) (fun _ -> incr);
 }
-```
 
-```pulse //attempt$
 fn attempt (x:ref int)
 requires pts_to x 'i
 ensures emp
@@ -72,7 +66,6 @@ ensures emp
   };
   par incr incr
 }
-```
 
 //lock_inv$
 let contributions (left right: GR.ref int) (i v:int)=
@@ -87,7 +80,6 @@ let lock_inv (x:ref int) (init:int) (left right:GR.ref int) =
     contributions left right init v
 //lock_inv$
 
-```pulse //incr_left$
 fn incr_left (x:ref int)
              (#left:GR.ref int)
              (#right:GR.ref int)
@@ -108,9 +100,7 @@ ensures  GR.pts_to left #one_half ('vl + 1)
   fold lock_inv;
   L.release lock
 }
-```
 
-```pulse //incr_right$
 fn incr_right (x:ref int)
               (#left:GR.ref int)
               (#right:GR.ref int)
@@ -131,9 +121,7 @@ ensures  GR.pts_to right #one_half ('vl + 1)
   fold (lock_inv x i left right);
   L.release lock
 }
-```
 
-```pulse //add2$
 fn add2 (x:ref int)
 requires pts_to x 'i
 ensures  pts_to x ('i + 2)
@@ -155,7 +143,6 @@ ensures  pts_to x ('i + 2)
   GR.free left;
   GR.free right;
 }
-```
 
 /////////////////////////////////////////////////////////////////////////
 // A bit more generic, with ghost functions
@@ -164,7 +151,6 @@ ensures  pts_to x ('i + 2)
 
 //Parameterize incr by the ghost steps it needs to take
 //give it an abstract spec in terms of some call-provided aspec
-```pulse //incr$
 fn incr (x: ref int)
         (#refine #aspec: int -> vprop)
         (l:L.lock (exists* v. pts_to x v ** refine v))
@@ -183,11 +169,9 @@ ensures aspec ('i + 1)
     ghost_steps vx 'i;
     L.release l;
 }
-```
 
 //At the call-site, we instantiate incr twice, with different
 //ghost steps
-```pulse //add2_v2$
 fn add2_v2 (x: ref int)
 requires pts_to x 'i
 ensures pts_to x ('i + 2)
@@ -246,7 +230,6 @@ ensures pts_to x ('i + 2)
     GR.free left;
     GR.free right;
 }
-```
 
 //Note, rather than using two ghost references and duplicating code
 //monoids and use just a single piece of ghost state. But, that's for another
@@ -278,7 +261,6 @@ val cas (r:ref int) (u v:int) (#i:erased int)
 //and then discard it
 module C = Pulse.Lib.CancellableInvariant
 
-```pulse //incr_atomic_spec$
 fn incr_atomic
         (x: ref int)
         (#p:perm)
@@ -354,10 +336,8 @@ ensures aspec ('i + 1) ** C.active p t
   //incr_atomic_body_loop$
   unfold cond;
 }
-```
 
 
-```pulse //add2_v3$
 fn add2_v3 (x: ref int)
 requires pts_to x 'i
 ensures pts_to x ('i + 2)
@@ -421,4 +401,3 @@ ensures pts_to x ('i + 2)
     GR.free right;
 
 }
-```

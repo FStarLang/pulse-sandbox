@@ -28,7 +28,6 @@ open Pulse.Lib.Core
 
 let fstar_five : int = 5
 
-```pulse
 fn five ()
   requires emp
   returns n:int
@@ -36,11 +35,9 @@ fn five ()
 {
   fstar_five
 }
-```
 
 let pulse_five_in_fstar = five ()
 
-```pulse
 fn five_alt ()
   requires emp
   returns n:(n:int { n == 5 })
@@ -48,7 +45,6 @@ fn five_alt ()
 {
   5
 }
-```
 
 open Pulse.Lib.Reference
 module R = Pulse.Lib.Reference
@@ -60,7 +56,6 @@ module R = Pulse.Lib.Reference
   - default full permission
   - heap reference, read and write
 *)
-```pulse
 fn ref_swap (r1 r2:ref int)
   requires
     R.pts_to r1 'n1 **
@@ -75,7 +70,6 @@ fn ref_swap (r1 r2:ref int)
   r1 := v2;
   r2 := v1
 }
-```
 
 open Pulse.Lib.Array
 module A = Pulse.Lib.Array
@@ -89,7 +83,6 @@ open Pulse.Lib.BoundedIntegers
   - machine integers, ops on bounded integers
 *)
 
-```pulse
 fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
   requires
     A.pts_to a 's0 **
@@ -107,7 +100,6 @@ fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
   a.(i) <- vj;
   a.(j) <- vi;
 }
-```
 
 (*
   Things to note:
@@ -115,7 +107,6 @@ fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
   - mutable local reference, read and write
   - variable permission
 *)
-```pulse
 fn max (n:SZ.t) (a:larray nat (v n))
   requires
     A.pts_to a #'p 's **
@@ -154,4 +145,3 @@ fn max (n:SZ.t) (a:larray nat (v n))
   let vmax = !max;
   vmax
 }
-```

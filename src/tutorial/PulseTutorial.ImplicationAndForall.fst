@@ -1,5 +1,6 @@
 module PulseTutorial.ImplicationAndForall
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 open Pulse.Lib.Stick.Util
 open Pulse.Lib.Forall.Util
 module I = Pulse.Lib.Stick.Util
@@ -12,7 +13,6 @@ let regain_half #a (x:GR.ref a) (v:a) =
 //regain_half$
 
 
-```pulse //intro_regain_half$
 ghost
 fn intro_regain_half (x:GR.ref int)
 requires pts_to x 'v
@@ -29,9 +29,7 @@ ensures pts_to x #one_half 'v ** regain_half x 'v
   I.intro _ _ _ aux;
   fold regain_half;
 }
-```
 
-```pulse //use_regain_half$
 ghost
 fn use_regain_half (x:GR.ref int)
 requires pts_to x #one_half 'v ** regain_half x 'v
@@ -40,7 +38,6 @@ ensures pts_to x 'v
   unfold regain_half;
   I.elim _ _;
 }
-```
 
 //regain_half_q$
 let regain_half_q #a (x:GR.ref a) =
@@ -50,7 +47,6 @@ let regain_half_q #a (x:GR.ref a) =
 
 module FA = Pulse.Lib.Forall.Util
 
-```pulse //intro_regain_half_q$
 ghost
 fn intro_regain_half_q (x:GR.ref int)
 requires pts_to x 'v
@@ -67,9 +63,7 @@ ensures pts_to x #one_half 'v ** regain_half_q x
   FA.intro_forall_imp _ _ _ aux1;
   fold regain_half_q;
 }
-```
 
-```pulse //use_regain_half_q$
 ghost
 fn use_regain_half_q (x:GR.ref int)
 requires pts_to x #one_half 'u ** regain_half_q x
@@ -79,7 +73,6 @@ ensures pts_to x 'u
   FA.elim #_ #(fun u -> pts_to x #one_half u @==> pts_to x u) 'u;
   I.elim _ _;
 }
-```
 
 //can_update$
 let can_update (x:GR.ref int) =
@@ -87,7 +80,6 @@ let can_update (x:GR.ref int) =
                pts_to x v
 //can_update$
 
-```pulse //make_can_update$
 ghost
 fn make_can_update (x:GR.ref int)
 requires pts_to x w
@@ -112,9 +104,7 @@ ensures pts_to x #one_half w ** can_update x
   FA.intro _ aux;
   fold (can_update x);
 }
-```
 
-```pulse //update$
 ghost
 fn update (x:GR.ref int) (k:int)
 requires pts_to x #one_half 'u ** can_update x
@@ -126,6 +116,5 @@ ensures pts_to x #one_half k ** can_update x
   I.elim _ _;
   make_can_update x;
 }
-```
 
 

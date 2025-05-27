@@ -15,7 +15,8 @@
 *)
 
 module PulseTutorial.UserDefinedPredicates
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 open FStar.Mul
 //SNIPPET_START: pts_to_diag$
 let pts_to_diag
@@ -26,7 +27,6 @@ let pts_to_diag
 = pts_to r (v, v)
 //SNIPPET_END: pts_to_diag$
 
-```pulse //double$
 fn double (r:ref (int & int))
 requires pts_to_diag r 'v
 ensures pts_to_diag r (2 * 'v)
@@ -37,9 +37,7 @@ ensures pts_to_diag r (2 * 'v)
   r := (v2, v2);
   fold (pts_to_diag r v2);
 }
-```
 
-```pulse //double_alt$
 fn double_alt (r:ref (int & int))
 requires pts_to_diag r 'v
 ensures pts_to_diag r (2 * 'v)
@@ -50,7 +48,6 @@ ensures pts_to_diag r (2 * 'v)
   r := (v2, v2);
   fold pts_to_diag;
 }
-```
 
 //SNIPPET_START: point$
 noeq
@@ -64,7 +61,6 @@ let is_point (p:point) (xy: int & int) =
     pts_to p.y (snd xy)
 //SNIPPET_END: point$
 
-```pulse //move$
 fn move (p:point) (dx:int) (dy:int)
 requires is_point p 'xy
 ensures is_point p (fst 'xy + dx, snd 'xy + dy)
@@ -76,9 +72,7 @@ ensures is_point p (fst 'xy + dx, snd 'xy + dy)
   p.y := y + dy;
   fold (is_point p (x + dx, y + dy));
 }
-```
 
-```pulse //fold_is_point$
 ghost
 fn fold_is_point (p:point)
 requires pts_to p.x 'x ** pts_to p.y 'y
@@ -86,9 +80,7 @@ ensures is_point p (reveal 'x, reveal 'y)
 {
   fold (is_point p (reveal 'x, reveal 'y))
 }
-```
 
-```pulse //move_alt$
 fn move_alt (p:point) (dx:int) (dy:int)
 requires is_point p 'xy
 ensures is_point p (fst 'xy + dx, snd 'xy + dy)
@@ -100,9 +92,7 @@ ensures is_point p (fst 'xy + dx, snd 'xy + dy)
   p.y := y + dy;
   fold_is_point p;
 }
-```
 
-```pulse //create_and_move$
 fn create_and_move ()
 requires emp
 ensures emp
@@ -123,10 +113,8 @@ ensures emp
     with _v. rewrite pts_to p.y _v as pts_to y _v;
     //pts_to x (fst (1, 1)) ** pts_to y (snd (1, 1))
 }
-```
 
 
-```pulse //create_and_move_alt$
 fn create_and_move_alt ()
 requires emp
 ensures emp
@@ -141,14 +129,12 @@ ensures emp
     unfold is_point;
     rewrite each p.x as x, p.y as y;
 }
-```
 
 
 let is_point_curry (p:point) ([@@@equate_by_smt] x:int) ([@@@equate_by_smt] y:int) =
     pts_to p.x x **
     pts_to p.y y
 
-```pulse
 fn move_curry (p:point) (dx:int) (dy:int)
 requires is_point_curry p 'x 'y
 ensures is_point_curry p ('x + dx) ('y + dy)
@@ -160,5 +146,4 @@ ensures is_point_curry p ('x + dx) ('y + dy)
   p.y := y + dy;
   fold is_point_curry;
 }
-```
 

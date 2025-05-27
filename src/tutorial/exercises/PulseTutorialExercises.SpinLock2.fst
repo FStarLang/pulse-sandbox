@@ -2,7 +2,8 @@
    with an additional permission to track when a lock is taken,
    ensuring that a lock cannot be double-released *)
 module PulseTutorialExercises.SpinLock2
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module Box = Pulse.Lib.Box
 module U32 = FStar.UInt32
 module GR = Pulse.Lib.GhostReference
@@ -28,7 +29,6 @@ type lock (p:vprop) = {
 
 let locked #p (l:lock p) = GR.pts_to l.gr #one_half 1ul
 
-```pulse
 fn new_lock (p:vprop)
 requires p
 returns l:lock p
@@ -36,23 +36,18 @@ ensures emp
 {
   admit()
 }
-```
 
 
-```pulse
 fn rec acquire #p (l:lock p)
 requires emp
 ensures p ** locked l
 {
   admit()
 }
-```
 
-```pulse
 fn release #p (l:lock p)
 requires p ** locked l
 ensures emp
 {
   admit()
 }
-```

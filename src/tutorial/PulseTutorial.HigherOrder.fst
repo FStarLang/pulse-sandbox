@@ -1,7 +1,7 @@
 module PulseTutorial.HigherOrder
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module B = Pulse.Lib.Box
-```pulse //apply$
 fn apply (#a:Type0)
          (#b:a -> Type0)
          (#pre:a -> vprop)
@@ -14,9 +14,7 @@ ensures post x y
 {
   f x
 }
-```
 
-```pulse //apply_ghost$
 ghost
 fn apply_ghost
          (#a:Type0)
@@ -31,26 +29,20 @@ ensures post x y
 {
   f x
 }
-```
 
 let id_t = (#a:Type0) -> x:a -> stt a emp (fun _ -> emp)
 
-```pulse
 fn id ()
 : id_t
 = (#a:Type0) (x:a) { x }
-```
 
 let id_t_a (a:Type0) = x:a -> stt a emp (fun _ -> emp)
 
 [@@expect_failure] //FIXME! This should work!
-```pulse
 fn id_a (a:Type0)
 : id_t_a a
 = (x:a) { x }
-```
 
-```pulse
 fn id_a (a:Type0)
 requires emp
 returns f:id_t_a a
@@ -65,7 +57,6 @@ ensures emp
 };
   aux
 }
-```
 
 
 //ctr$
@@ -79,7 +70,6 @@ type ctr = {
 let next c = c.next
 let destroy c = c.destroy
 
-```pulse //new_counter$
 fn new_counter ()
 requires emp
 returns c:ctr
@@ -106,9 +96,7 @@ ensures c.inv 0
     rewrite (pts_to x 0) as (c.inv 0);
     c
 }
-```
 
-```pulse
 fn return (#a:Type0) (x:a)
 requires emp
 returns y:a
@@ -116,10 +104,8 @@ ensures pure (x == y)
 {
     x
 }
-```
 
 
-```pulse //test_counter$
 fn test_counter ()
 requires emp
 ensures emp
@@ -131,4 +117,3 @@ ensures emp
     assert pure (x == 1);
     destroy c _;
 }
-```

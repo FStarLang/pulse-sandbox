@@ -1,6 +1,7 @@
 module PulseTutorial.SpinLock
 
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 module Box = Pulse.Lib.Box
 module U32 = FStar.UInt32
 
@@ -18,7 +19,6 @@ type lock (p:vprop) = {
 
 let lock_alive #p (l:lock p) = inv l.i (lock_inv l.r p)
 
-```pulse
 fn new_lock (p:vprop)
 requires p ** pure (is_big p)
 returns  l:lock p
@@ -34,9 +34,7 @@ ensures  lock_alive l
    fold (lock_alive l);
    l
 }
-```
 
-```pulse
 fn rec acquire #p (l:lock p)
 requires lock_alive l
 ensures  lock_alive l ** p
@@ -71,9 +69,7 @@ ensures  lock_alive l ** p
   if b { rewrite (maybe b p) as p; }
   else { rewrite (maybe b p) as emp; acquire l }
 }
-```
 
-```pulse
 fn release #p (l:lock p)
 requires lock_alive l ** p
 ensures  lock_alive l
@@ -91,4 +87,3 @@ ensures  lock_alive l
   };
   fold (lock_alive l);
 }
-```

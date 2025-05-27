@@ -15,12 +15,12 @@
 *)
 
 module PulseTutorial.Conditionals
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 
 //SNIPPET_START: max$
 let max_spec x y = if x < y then y else x
 
-```pulse
 fn max #p #q (x y:ref int)
 requires pts_to x #p 'vx ** pts_to y #q 'vy
 returns n:int
@@ -38,11 +38,9 @@ ensures pts_to x #p 'vx ** pts_to y #q 'vy
         vy
     }
 }
-```
 //SNIPPET_END: max$
 
 [@@expect_failure]
-```pulse //max_alt_fail$
 fn max_alt #p #q (x y:ref int)
 requires pts_to x #p 'vx ** pts_to y #q 'vy
 returns n:int
@@ -62,10 +60,8 @@ ensures pts_to x #p 'vx ** pts_to y #q 'vy
     };
     !result;
 }
-```
 
 
-```pulse //max_alt$
 fn max_alt #p #q (x y:ref int)
 requires pts_to x #p 'vx ** pts_to y #q 'vy
 returns n:int
@@ -91,7 +87,6 @@ ensures pts_to x #p 'vx ** pts_to y #q 'vy
     };
     !result;
 }
-```
 
 
 module T = FStar.Tactics
@@ -109,7 +104,6 @@ let pts_to_or_null #a
   | Some x -> exists* w. pts_to x #p w ** pure (v == Some w)
 //SNIPPET_END: nullable_ref$
 
-```pulse //read_nullable$
 fn read_nullable #a #p (r:nullable_ref a)
 requires pts_to_or_null r #p 'v
 returns o:option a
@@ -134,10 +128,8 @@ ensures pts_to_or_null r #p 'v
      }
     }
 }
-```
 
 //SNIPPET_START: pts_to_or_null_helpers$
-```pulse
 ghost
 fn elim_pts_to_or_null_none #a #p (r:nullable_ref a)
 requires pts_to_or_null r #p 'v ** pure (r == None)
@@ -148,9 +140,7 @@ ensures pts_to_or_null r #p 'v ** pure ('v == None)
     fold (pts_to_or_null None #p 'v);
     rewrite each (None #(ref a)) as r;
 }
-```
 
-```pulse
 ghost
 fn intro_pts_to_or_null_none #a #p (r:nullable_ref a)
 requires pure (r == None)
@@ -159,9 +149,7 @@ ensures pts_to_or_null r #p None
     fold (pts_to_or_null #a None #p None);
     rewrite each (None #(ref a)) as r;
 }
-```
 
-```pulse
 ghost
 fn elim_pts_to_or_null_some #a #p (r:nullable_ref a) (x:ref a)
 requires pts_to_or_null r #p 'v ** pure (r == Some x)
@@ -170,9 +158,7 @@ ensures exists* w. pts_to x #p w ** pure ('v == Some w)
     rewrite each r as (Some x);
     unfold (pts_to_or_null (Some x) #p 'v);
 }
-```
 
-```pulse
 ghost
 fn intro_pts_to_or_null_some #a #p (r:nullable_ref a) (x:ref a)
 requires pts_to x #p 'v ** pure (r == Some x)
@@ -181,10 +167,8 @@ ensures pts_to_or_null r #p (Some 'v)
     fold (pts_to_or_null (Some x) #p (Some 'v));
     rewrite each (Some x) as r;
 }
-```
 //SNIPPET_END: pts_to_or_null_helpers$
 
-```pulse //read_nullable_alt$
 fn read_nullable_alt #a #p (r:nullable_ref a)
 requires pts_to_or_null r #p 'v
 returns o:option a
@@ -204,11 +188,9 @@ ensures pts_to_or_null r #p 'v
      }
     }
 }
-```
 
 //SNIPPET_START: read_nullable_alt_fail$
 [@@expect_failure]
-```pulse
 fn read_nullable_alt #a #p (r:nullable_ref a)
 requires pts_to_or_null r #p 'v
 returns o:option a
@@ -225,10 +207,8 @@ ensures emp
         admit() }
     }
 }
-```
 //SNIPPET_END: read_nullable_alt_fail$
 
-```pulse //write_nullable$
 fn write_nullable #a (r:nullable_ref a) (v:a)
 requires pts_to_or_null r 'v
 ensures exists* w. pts_to_or_null r w ** pure (Some? r ==> w == Some v)
@@ -242,4 +222,3 @@ ensures exists* w. pts_to_or_null r w ** pure (Some? r ==> w == Some v)
      }
     }
 }
-```

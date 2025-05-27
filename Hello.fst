@@ -1,12 +1,11 @@
 module Hello
 
-open Pulse.Lib.Pervasives
+#lang-pulse
+open Pulse
 
-```pulse
 fn test (x:unit)
   requires emp
   ensures emp
 {
   ()
 }
-```
