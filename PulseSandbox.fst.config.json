@@ -1,15 +1,11 @@
 {
-  "fstar_exe": "${FSTAR_HOME}/bin/fstar.exe",
+  "fstar_exe": "fstar.exe",
   "options": [
-    "--load_cmxs", "pulse",
     "--warn_error", "-249",
     "--already_cached", "Pulse.Lib.*"
   ],
   "include_dirs": [
-    "pulse/lib/pulse",
-    "pulse/lib/pulse/core",
-    "pulse/lib/pulse/lib",
-    "pulse/lib/pulse/lib/class",
+    "pulse/out/lib/pulse",
     "src"
   ]
 }
