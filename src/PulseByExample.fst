@@ -15,6 +15,7 @@
 *)
 
 module PulseByExample
+#lang-pulse
 
 module PM = Pulse.Main
 open Pulse.Lib.Core
