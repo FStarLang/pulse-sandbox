@@ -1,23 +1,23 @@
 module PulseTutorialSolutions.SpinLock2
 #lang-pulse
-open Pulse
+open Pulse.Lib.Pervasives
 module Box = Pulse.Lib.Box
 module U32 = FStar.UInt32
 module GR = Pulse.Lib.GhostReference
 
 //lock$
-let maybe (b:bool) (p:vprop) =
+let maybe (b:bool) (p:slprop) =
     if b then p else emp
 
-let lock_inv (r:ref U32.t) (gr:GR.ref U32.t) (p:vprop) =
-  exists* v perm.
+let lock_inv (r:ref U32.t) (gr:GR.ref U32.t) (p:slprop) =
+  exists* v perm. 
     pts_to r v **
     GR.pts_to gr #perm v **
     maybe (v = 0ul) p **
-    pure (if v=0ul then perm == full_perm else perm == one_half)
+    pure (if v=0ul then perm == 1.0R else perm == 0.5R)
 
 noeq
-type lock (p:vprop) = {
+type lock (p:slprop) = {
   r:ref U32.t;
   gr:GR.ref U32.t;
   i:inv (lock_inv r gr p);
@@ -26,7 +26,8 @@ type lock (p:vprop) = {
 
 let locked #p (l:lock p) = GR.pts_to l.gr #one_half 1ul
 
-fn new_lock (p:vprop)
+
+fn new_lock (p:slprop)
 requires p
 returns l:lock p
 ensures emp
@@ -42,19 +43,21 @@ ensures emp
 }
 
 
+
+
 fn rec acquire #p (l:lock p)
 requires emp
 ensures p ** locked l
 {
-  let b =
+  let b = 
     with_invariants l.i
     returns b:bool
-    ensures maybe b (p ** locked l)
-    {
+    ensures maybe b (p ** locked l) 
+    { 
       unfold lock_inv;
       let b = cas l.r 0ul 1ul;
       if b
-      {
+      { 
         elim_cond_true _ _ _;
         with _b. rewrite (maybe _b p) as p;
         fold (maybe false p);
@@ -79,6 +82,8 @@ ensures p ** locked l
   else { with q. rewrite (maybe b q) as emp; acquire l }
 }
 
+
+
 fn release #p (l:lock p)
 requires p ** locked l
 ensures emp
@@ -97,6 +102,8 @@ ensures emp
 
 }
 
+
+
 fn acquire_loop #p (l:lock p)
 requires emp
 ensures p ** locked l
@@ -114,15 +121,15 @@ ensures p ** locked l
         pure (b == not v)
   {
     with _b _p. rewrite (maybe _b _p) as emp;
-    let b =
+    let b = 
       with_invariants l.i
       returns b:bool
       ensures maybe b (p ** locked l) ** pts_to acquired false
-      {
+      { 
         unfold lock_inv;
         let b = cas l.r 0ul 1ul;
         if b
-        {
+        { 
             elim_cond_true _ _ _;
             with _b. rewrite (maybe _b p) as p;
             fold (maybe false p);
@@ -147,3 +154,4 @@ ensures p ** locked l
   };
   with _b _q. rewrite (maybe _b _q) as _q;
 }
+

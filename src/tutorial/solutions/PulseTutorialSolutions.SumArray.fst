@@ -1,6 +1,6 @@
 module PulseTutorialSolutions.SumArray
 #lang-pulse
-open Pulse
+open Pulse.Lib.Pervasives
 open Pulse.Lib.Array
 module SZ = FStar.SizeT
 module R = Pulse.Lib.Reference
@@ -14,6 +14,7 @@ let rec sum_spec (s:Seq.seq int) : Tot int (decreases Seq.length s) =
 
 open Pulse.Lib.BoundedIntegers
 
+
 fn sum #p (#s:erased _) (arr:array int) (len:SZ.t { v len == Seq.length s })
   requires pts_to arr #p s
   returns res:int
@@ -23,18 +24,16 @@ fn sum #p (#s:erased _) (arr:array int) (len:SZ.t { v len == Seq.length s })
   let mut res = 0;
 
   while (
-    let vi = !i;
-    (vi < len)
+    (!i < len)
   )
-  invariant b.
+  invariant
     pts_to arr #p s **
     (exists* vi vres. (
        R.pts_to i vi **
        R.pts_to res vres **
        pure (
          v vi <= v len /\
-         vres == sum_spec (Seq.slice s 0 (v vi)) /\
-         (b == (vi < len))
+         vres == sum_spec (Seq.slice s 0 (v vi))
        )))
   {
     let vi = !i;
@@ -43,7 +42,8 @@ fn sum #p (#s:erased _) (arr:array int) (len:SZ.t { v len == Seq.length s })
     res := vres + v;
     i := vi + 1sz
   };
-
+  
   let vres = !res;
   vres
 }
+

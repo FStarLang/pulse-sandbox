@@ -16,10 +16,11 @@
 
 module PulseTutorial.Existentials
 #lang-pulse
-open Pulse
+open Pulse.Lib.Pervasives
 open FStar.Mul
 
-fn assign #a (x:ref a) (v:a)
+//assign$
+fn assign (#a: Type0) (x:ref a) (v:a)
 requires
   exists* w. pts_to x w
 ensures
@@ -27,20 +28,22 @@ ensures
 {
   x := v
 }
+//end assign$
 
-//SNIPPET_START: incr_fail$
-[@@expect_failure]
+//incr_fail$
+[@@expect_failure] 
 fn incr #a (x:ref int)
 requires
   exists* w0. pts_to x w
-ensures
+ensures 
   pts_to x (w0 + 1) //w0 is not in scope here
 {
   let w = !x
   x := w + 1
 }
-//SNIPPET_END: incr_fail$
+//end incr_fail$
 
+//make_even$
 fn make_even (x:ref int)
 requires
   exists* w0. pts_to x w0
@@ -50,7 +53,10 @@ ensures
   let v = !x;
   x := v + v;
 }
+//end make_even$
 
+
+//make_even_explicit$
 fn make_even_explicit (x:ref int)
 requires
   exists* w0. pts_to x w0
@@ -64,21 +70,26 @@ ensures
   exists* w1. pts_to x w1 ** pure (w1 % 2 == 0)
   with (v + v);
 }
+//end make_even_explicit$
 
+
+//make_even_explicit_alt$
 fn make_even_explicit_alt (x y:ref int)
 requires
   exists* wx wy. pts_to x wx ** pts_to y wy ** pure (wx % 2 == wy % 2)
 ensures
   exists* wx' wy'. pts_to x wx' ** pts_to y wy' ** pure (wx' % 2 == 0)
 {
-  with wx wy. _;
-  let vx = !x;
+  let vx = !x; 
   let vy = !y;
   x := vx + vy;
   introduce exists* wx' wy'. pts_to x wx' ** pts_to y wy' ** pure (wx' % 2 == 0)
   with (vx + vy) vy;
 }
+//end make_even_explicit_alt$
 
+
+//call_make_even$
 fn call_make_even (x:ref int)
 requires
   pts_to x 'v
@@ -87,3 +98,4 @@ ensures
 {
   make_even x;
 }
+//end call_make_even$

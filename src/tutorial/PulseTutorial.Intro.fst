@@ -16,26 +16,28 @@
 
 module PulseTutorial.Intro
 #lang-pulse
-open Pulse
+open Pulse.Lib.Pervasives
+open Pulse.Lib.Par
+
 
 
 
 fn par (#p #q #r #s:_)
+        {| is_send p, is_send q, is_send r, is_send s |}
        (f: (unit -> stt unit p (fun _ -> q)))
        (g: (unit -> stt unit r (fun _ -> s)))
 requires p ** r
 ensures q ** s
 {
-    parallel
-    requires p and r
-    ensures  q and s
-        { f () }
-        { g () };
-    ()
+    par #p #q #r #s
+        fn _ { f () }
+        fn _ { g () }
 }
+
 
 let incr_functional (x:int) = x + 1
 
+//incr$
 fn incr (x:ref int)
 requires pts_to x 'i
 ensures pts_to x ('i + 1)
@@ -43,7 +45,9 @@ ensures pts_to x ('i + 1)
     let v = !x;
     x := v + 1;
 }
+//end incr$
 
+//incr_explicit_i$
 fn incr_explicit_i (x:ref int) (i:erased int)
 requires pts_to x i
 ensures pts_to x (i + 1)
@@ -51,27 +55,33 @@ ensures pts_to x (i + 1)
     let v = !x;
     x := v + 1;
 }
+//end incr_explicit_i$
 
-
+//par_incr$
 fn par_incr (x y:ref int)
 requires pts_to x 'i ** pts_to y 'j
 ensures pts_to x ('i + 1) ** pts_to y ('j + 1)
 {
-   par (fun _ -> incr x)
-       (fun _ -> incr y)
+   par (fun _ -> incr x #'i)
+       (fun _ -> incr y #'j)
 }
+//end par_incr$
 
+
+//incr_frame$
 fn incr_frame (x y:ref int)
 requires pts_to x 'i ** pts_to y 'j
 ensures pts_to x ('i + 1) ** pts_to y 'j
 {
    incr x;
 }
+//end incr_frame$
 
-fn incr_frame_any (x:ref int) (f:vprop)
+//incr_frame_any$
+fn incr_frame_any (x:ref int) (f:slprop)
 requires pts_to x 'i ** f
 ensures pts_to x ('i + 1) ** f
 {
    incr x;
 }
-
+//end incr_frame_any$

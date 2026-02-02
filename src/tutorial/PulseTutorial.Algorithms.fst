@@ -15,12 +15,12 @@
 *)
 
 module PulseTutorial.Algorithms
+#lang-pulse
 
 open FStar.Mul
 open FStar.SizeT
 
-#lang-pulse
-open Pulse
+open Pulse.Lib.Pervasives
 open Pulse.Lib.Array
 
 module SZ = FStar.SizeT
@@ -28,6 +28,7 @@ module G = FStar.Ghost
 module R = Pulse.Lib.Reference
 
 #set-options "--z3rlimit_factor 2"
+
 
 fn read #p (#s:erased _) (arr:array UInt32.t) (len:SZ.t) (i:SZ.t { v len == Seq.length s /\ v i < v len })
   requires pts_to arr #p s
@@ -37,6 +38,7 @@ fn read #p (#s:erased _) (arr:array UInt32.t) (len:SZ.t) (i:SZ.t { v len == Seq.
   arr.(i)
 }
 
+
 let count_until (#a:eqtype) (x:a) (s:Seq.seq a) (j:nat { j <= Seq.length s }) : GTot nat =
   Seq.count x (Seq.slice s 0 j)
 
@@ -45,7 +47,7 @@ let count_until_next (#a:eqtype) (x:a) (s:Seq.seq a) (j:nat { j < Seq.length s }
   : Lemma
       (ensures count_until (Seq.index s j) s (j + 1) == count_until (Seq.index s j) s j + 1 /\
                (forall (y:a). y =!= Seq.index s j ==> count_until y s (j + 1) == count_until y s j))
-
+   
 //countlemmaend$
   = let s_0_j = Seq.slice s 0 j in
     let sj = Seq.create 1 (Seq.index s j) in
@@ -72,7 +74,10 @@ let has_majority_in (#a:eqtype) (x:a) (s:Seq.seq a) = Seq.length s < 2 * count x
 noextract
 let no_majority (#a:eqtype) (s:Seq.seq a) = forall (x:a). ~(x `has_majority_in` s)
 
-fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len == Seq.length s })
+
+fn majority
+  (#[@@@ Rust_generics_bounds ["Copy"; "PartialEq"]] a:eqtype)
+  #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len == Seq.length s })
   requires pts_to votes #p s ** pure (0 < SZ.v len /\ SZ.fits (2 * SZ.v len))
   returns x:option a
   ensures pts_to votes #p s **
@@ -87,10 +92,9 @@ fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len 
   assert (pure (count_until votes_0 s 1 == 1));
   // while loop for phase 1
   while (
-    let vi = !i;
-    (vi <^ len)
+    (!i <^ len)
   )
-  invariant b.
+  invariant (
     pts_to votes #p s **
     (exists* vi vk vcand.
        R.pts_to i vi       **
@@ -103,8 +107,8 @@ fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len 
          // constraint for the current candidate,
          2 * (count_until vcand s (v vi) - v vk) <= v vi - v vk /\
          // constraint for the rest of the candidates
-         (forall (vcand':a). vcand' =!= vcand ==> 2 * count_until vcand' s (v vi) <= v vi - v vk) /\
-         b == (v vi < v len)))
+         (forall (vcand':a). vcand' =!= vcand ==> 2 * count_until vcand' s (v vi) <= v vi - v vk)))
+    )
   {
     let vi = !i;
     let vk = !k;
@@ -129,7 +133,7 @@ fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len 
   let vcand = !cand;
   // a couple of optimizations
   if (vk = 0sz) {
-    None #a
+    None
   } else if (len <^ 2sz *^ vk) {
     Some vcand
   } else {
@@ -137,17 +141,16 @@ fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len 
     k := 0sz;
     // while loop for phase 2
     while (
-      let vi = !i;
-      (vi <^ len)
+      (!i <^ len)
     )
-    invariant b.
+    invariant (
       pts_to votes #p s **
       (exists* vi vk.
          R.pts_to i vi **
          R.pts_to k vk **
          pure (SZ.v vi <= Seq.length s /\
-               SZ.v vk == count_until vcand s (SZ.v vi) /\
-               b == (SZ.v vi < SZ.v len)))
+               SZ.v vk == count_until vcand s (SZ.v vi)))
+    )
     {
       let vi = !i;
       let vk = !k;
@@ -165,13 +168,15 @@ fn majority (#a:eqtype) #p (#s:G.erased _) (votes:array a) (len:SZ.t { SZ.v len 
     if (len <^ 2sz *^ vk) {
       Some vcand
     } else {
-      None #a
+      None
     }
   }
 }
 //majorityphase1end$
 
+
 type u32_t = FStar.UInt32.t
+
 
 //majoritymono$
 fn majority_mono #p (#s:G.erased _) (votes:array u32_t) (len:SZ.t { SZ.v len == Seq.length s })
@@ -183,3 +188,4 @@ fn majority_mono #p (#s:G.erased _) (votes:array u32_t) (len:SZ.t { SZ.v len == 
   majority #u32_t #p #s votes len
 }
 //majoritymonoend$
+

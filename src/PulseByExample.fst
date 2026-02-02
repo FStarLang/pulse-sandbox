@@ -15,42 +15,46 @@
 *)
 
 module PulseByExample
-#lang-pulse
 
-module PM = Pulse.Main
-open Pulse.Lib.Core
-
-(*
+(* 
   Things to note:
   - syntax extension notation
   - 1 or more arguments
   - precondition and postcondition
 *)
 
+//SNIPPET_START: five
+#lang-pulse
+open Pulse.Lib.Pervasives
 let fstar_five : int = 5
 
 fn five ()
   requires emp
   returns n:int
   ensures pure (n == 5)
-{
+{ 
   fstar_five
 }
 
+
 let pulse_five_in_fstar = five ()
+//SNIPPET_END: five
+
 
 fn five_alt ()
   requires emp
   returns n:(n:int { n == 5 })
   ensures emp
-{
+{ 
   5
 }
 
+
 open Pulse.Lib.Reference
+open Pulse.Class.PtsTo
 module R = Pulse.Lib.Reference
 
-(*
+(* 
   Things to note:
   - separating conjunction
   - tick for erased, implicit values
@@ -59,17 +63,56 @@ module R = Pulse.Lib.Reference
 *)
 fn ref_swap (r1 r2:ref int)
   requires
-    R.pts_to r1 'n1 **
-    R.pts_to r2 'n2
+    r1 |-> 'n1 **
+    r2 |-> 'n2
   ensures
-    R.pts_to r1 'n2 **
-    R.pts_to r2 'n1
+    r1 |-> 'n2 **
+    r2 |-> 'n1
 
 {
   let v1 = !r1;
-  let v2 = !r2;
-  r1 := v2;
+  r1 := !r2;
   r2 := v1
+}
+
+fn ref_non_zero (r1:ref int) (n1:Ghost.erased int)
+requires
+  r1 |-> n1
+returns b:bool
+ensures r1 |-> n1 ** pure (b == (Ghost.reveal n1 <> 0))
+{
+  (0 <> !r1);
+}
+
+fn id (r:ref int)
+  requires
+    r |-> 'n
+  returns r':ref int
+  ensures
+    r' |-> 'n ** pure (r == r')
+{
+  r;
+}
+
+fn set (r:ref int) (x:int)
+requires r |-> 'n
+ensures r |-> x
+{
+  r := x;
+}
+
+fn go () () ()
+{
+  ()
+}
+
+fn test (r:ref int)
+  requires 
+    r |-> 'n
+  ensures
+    r |-> 2
+{
+  go (set r 1) (set r 4) (set r 2);
 }
 
 open Pulse.Lib.Array
@@ -77,72 +120,94 @@ module A = Pulse.Lib.Array
 module SZ = FStar.SizeT
 open Pulse.Lib.BoundedIntegers
 
-(*
+(* 
   Things to note:
   - heap array, read and write
   - exists* and forall in spec
   - machine integers, ops on bounded integers
 *)
 
+
 fn arr_swap (#t:Type0) (n i j:SZ.t) (a:larray t (v n))
   requires
-    A.pts_to a 's0 **
+    a |-> 's0 **
     pure (Seq.length 's0 == v n /\ i < n /\ j < n)
   ensures
-    exists* s.
-    A.pts_to a s **
+    exists* s. 
+    a |-> s **
     pure (Seq.length 's0 == v n /\ Seq.length s == v n /\ i < n /\ j < n
        /\ (forall (k:nat). k < v n /\ k <> v i /\ k <> v j ==> Seq.index 's0 k == Seq.index s k)
        /\ Seq.index 's0 (v i) == Seq.index s (v j)
-       /\ Seq.index 's0 (v j) == Seq.index s (v i))
+       /\ Seq.index 's0 (v j) == Seq.index s (v i))  
 {
   let vi = a.(i);
-  let vj = a.(j);
-  a.(i) <- vj;
+  a.(i) <- a.(j);
   a.(j) <- vi;
 }
 
-(*
+
+(* 
   Things to note:
   - control flow: while loop, if
   - mutable local reference, read and write
   - variable permission
 *)
+
 fn max (n:SZ.t) (a:larray nat (v n))
   requires
-    A.pts_to a #'p 's **
+    a |-> Frac 'p 's **
     pure (Seq.length 's == v n)
   returns r:nat
   ensures
-    A.pts_to a #'p 's **
+    a |-> Frac 'p 's **
     pure (Seq.length 's == v n /\
           (forall (i:nat). i < v n ==> Seq.index 's i <= r))
 {
   let mut i : SZ.t = 0sz;
   let mut max : nat = 0;
-  while (let vi = !i; (vi < n))
-  invariant b. exists* (vi:SZ.t) (vmax:nat).
-    A.pts_to a #'p 's **
-    R.pts_to i vi **
-    R.pts_to max vmax **
+  while (!i < n)
+  invariant exists* (vi:SZ.t) (vmax:nat).
+    a |-> Frac 'p 's **
+    i |-> vi **
+    max |-> vmax **
     pure (vi <= n
-       /\ (forall (j:nat). j < v vi ==> Seq.index 's j <= vmax)
-       /\ b == (vi < n))
+       /\ (forall (j:nat). j < v vi ==> Seq.index 's j <= vmax))
   {
     let vi = !i;
-    let vmax = !max;
     let v = a.(vi);
     i := vi + 1sz;
-    if (v > vmax) {
+    if (v > !max) {
       max := v;
     }
   };
-  with (vi:SZ.t) (vmax:nat). assert (
-    R.pts_to i vi **
-    R.pts_to max vmax **
-    pure (vi = n
+  !max;
+}
+
+fn max_alt (n:SZ.t) (a:larray nat (v n))
+  requires
+    a |-> Frac 'p 's **
+    pure (Seq.length 's == v n)
+  returns r:nat
+  ensures
+    a |-> Frac 'p 's **
+    pure (Seq.length 's == v n /\
+          (forall (i:nat). i < v n ==> Seq.index 's i <= r))
+{
+  let mut i = 0sz;
+  let mut max : nat = 0;
+  while (!i < n)
+  invariant exists* (vi:SZ.t) (vmax:nat).
+    a |-> Frac 'p 's **
+    i |-> vi **
+    max |-> vmax **
+    pure (vi <= n
        /\ (forall (j:nat). j < v vi ==> Seq.index 's j <= vmax))
-  );
-  let vmax = !max;
-  vmax
+  {
+    let v = a.(!i);
+    i := !i + 1sz;
+    if (v > !max) {
+      max := v;
+    }
+  };
+  !max
 }
