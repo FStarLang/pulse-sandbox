@@ -5,6 +5,7 @@
 # rebuild the container (and FStar, and Pulse) everytime, which is very
 # expensive.
 
+# Base container already includes: FStar, karamel, z3, opam/OCaml
 FROM mtzguido/pulse-base-devcontainer:latest
 
 # Get Pulse and build
@@ -16,3 +17,15 @@ RUN eval $(opam env) \
  && make -j$(nproc) -C share/pulse/examples/
 
 ENV PULSE_HOME $HOME/pulse
+
+# Install Rust via rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="$HOME/.cargo/bin:$PATH"
+
+# Get fstar-mcp and build
+RUN source $HOME/.cargo/env \
+ && git clone --depth=1 https://github.com/FStarLang/fstar-mcp \
+ && cd fstar-mcp/ \
+ && cargo build --release
+
+ENV FSTAR_MCP_HOME $HOME/fstar-mcp
