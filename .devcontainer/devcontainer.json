@@ -16,7 +16,7 @@
   // Runs only once when container is prepared
   "onCreateCommand": "",
   // Runs periodically and/or when content of repo changes
-  "updateContentCommand": "ln -s ~/pulse pulse",
+  "updateContentCommand": "ln -sf ~/FStar FStar && ln -sf ~/pulse pulse && ln -sf ~/karamel karamel && ln -sf ~/fstar-mcp fstar-mcp",
   // These run only when the container is assigned to a user
   "postCreateCommand": "",
 }
