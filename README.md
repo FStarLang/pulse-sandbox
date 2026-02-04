@@ -83,3 +83,23 @@ Note, although checking the document proceeds in a linear, top-down fashion, at 
 fragment of the document locked. You can keep editing a document while F* is checking some prefix
 of it.
 
+Using GitHub Copilot CLI
+------------------------
+
+The codespace includes an installation of copilot in /home/vscode/.local/bin
+
+Open a terminal in vscode and cd to the `FStar` directory.
+
+Type `copilot` to launch it---it will read `FStar/.github` to pick up agent and 
+skill decriptions.
+
+You will then need to log in to your GitHub account with `/login`.
+
+You can now interact on the CLI to do various programming and proving tasks in F* 
+and Pulse.
+
+For example, use `/agent` and select `FStarCoder` and say "Write a function to 
+remove duplicates from a list of integers and prove it correct"
+
+Or, select the `PulseCoder` agent and say "Iterate over a linked list of integers 
+and compute the sum of its contents".
