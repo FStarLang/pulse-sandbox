@@ -1,6 +1,6 @@
 {
   "name": "Pulse sandbox devcontainer",
-  "image": "mtzguido/pulse-sandbox-devcontainer:latest",
+  "image": "ghcr.io/fstarlang/pulse-sandbox-devcontainer:latest",
   // "build": {
   //   "dockerfile": "minimal.Dockerfile"
   // },

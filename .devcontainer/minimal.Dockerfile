@@ -6,7 +6,7 @@
 # expensive.
 
 # Base container already includes: FStar, karamel, z3, opam/OCaml
-FROM mtzguido/pulse-base-devcontainer:latest
+FROM ghcr.io/fstarlang/pulse-base-devcontainer:latest
 
 # Get Pulse and build
 RUN eval $(opam env) \
