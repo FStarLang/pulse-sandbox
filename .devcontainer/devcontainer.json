@@ -12,11 +12,12 @@
     }
   },
   "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
   },
   // Runs only once when container is prepared
   "onCreateCommand": "",
   // Runs periodically and/or when content of repo changes
   "updateContentCommand": "ln -sf ~/FStar FStar && ln -sf ~/pulse pulse && ln -sf ~/karamel karamel && ln -sf ~/fstar-mcp fstar-mcp",
   // These run only when the container is assigned to a user
-  "postCreateCommand": "",
+  "postCreateCommand": "curl -fsSL https://gh.io/copilot-install | bash || true",
 }
