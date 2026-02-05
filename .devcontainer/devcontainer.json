@@ -12,7 +12,7 @@
     }
   },
   "remoteEnv": {
-    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin:/home/vscode/bin"
   },
   // Runs only once when container is prepared
   "onCreateCommand": "",
