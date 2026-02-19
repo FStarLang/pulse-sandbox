@@ -13,18 +13,15 @@ RUN eval $(opam env) \
  && . $HOME/.profile \
  && git clone --depth=1 https://github.com/FStarLang/pulse \
  && cd pulse/ \
- && make -j$(nproc) \
+ && make -j$(nproc) ADMIT=1 \
  && make -j$(nproc) -C share/pulse/examples/
 
-ENV PULSE_HOME $HOME/pulse
-
-# Install Rust via rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="$HOME/.cargo/bin:$PATH"
+ENV PULSE_ROOT $HOME/pulse
+# PULSE_HOME should actually be $PULSE_ROOT/out
+ENV PULSE_HOME $PULSE_ROOT
 
 # Get fstar-mcp and build
-RUN . $HOME/.cargo/env \
- && git clone --depth=1 https://github.com/FStarLang/fstar-mcp \
+RUN git clone --depth=1 https://github.com/FStarLang/fstar-mcp \
  && cd fstar-mcp/ \
  && cargo build --release
 
