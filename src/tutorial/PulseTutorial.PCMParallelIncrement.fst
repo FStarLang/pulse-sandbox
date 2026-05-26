@@ -1,11 +1,11 @@
 module PulseTutorial.PCMParallelIncrement
 #lang-pulse
 open Pulse.Lib.Pervasives
-module MS = Pulse.Lib.PCM.MonoidShares
-module GPR = Pulse.Lib.GhostPCMReference
 module CI = Pulse.Lib.CancellableInvariant
 module R = Pulse.Lib.Reference
 open Pulse.Lib.Par
+open Pulse.Lib.Tank
+module Tank = Pulse.Lib.Tank
 
 // For this example: we assume we have an atomic operation
 // to increment a ref nat
@@ -73,117 +73,6 @@ ensures  R.pts_to r ('i + 1)
    and that the value of `r` is `initial + n`.
 *)
 
-// We build the ghost state from a PCM corresponding to the 
-// monoid { nat, +, 0 }
-// `pcm_of n` represents a "tank" whose capacity is `n`
-let pcm_of (n:nat) = MS.pcm_of MS.nat_plus_cm n
-
-// A tank is a ghost reference from the above PCM
-let tank (n:nat) = GPR.gref (pcm_of n)
-
-// A predicate asserting ownership of `i` units of the tank
-let owns_tank_units #n ([@@@mkey] g : tank n) (i:nat)
-: timeless_slprop
-= GPR.pts_to #_ #(pcm_of n) g i
-
-
-// You cannot own more than the tank capacity
-
-ghost
-fn extract_tank_bound (#n:nat) (g:tank n) (#i:erased nat)
-requires
-  owns_tank_units g i
-ensures
-  owns_tank_units g i ** pure (i <= n)
-{
-  unfold owns_tank_units;
-  let v = GPR.read_simple g; 
-  fold owns_tank_units;
-}
-
-
-// Ownership of tank units can be combined additively
-[@@allow_ambiguous]
-
-ghost
-fn gather_tank_units (#n:nat) (g:tank n) (#i #j:erased nat)
-requires
-  owns_tank_units g i **
-  owns_tank_units g j
-ensures
-  owns_tank_units g (i + j) **
-  pure (i <= n /\ j <= n /\ i + j <= n)
-{
-  extract_tank_bound g #i;
-  extract_tank_bound g #j;
-  unfold (owns_tank_units g i);
-  unfold (owns_tank_units g j);
-  GPR.gather g _ _;
-  fold owns_tank_units;
-  extract_tank_bound g;
-}
-
-
-// Ownership of a unit can also split out and shared
-
-ghost
-fn share_tank_units (#n:nat) (g:tank n) (#u #v:nat)
-requires
-  owns_tank_units g (u + v)
-ensures
-  owns_tank_units g u **
-  owns_tank_units g v
-{
-  open FStar.PCM;
-  unfold owns_tank_units;
-  rewrite (GPR.pts_to g (u + v))
-       as (GPR.pts_to g (op (pcm_of n) u v));
-  GPR.share g u v;  //leaving the arguments as _ _ causes a crash
-  fold (owns_tank_units g u);
-  fold (owns_tank_units g v)
-}
-
-
-
-ghost
-fn share_one_tank_units (#n:nat) (g:tank n) (#u:nat { u > 0 })
-requires
-  owns_tank_units g u
-returns k:erased nat
-ensures
-  owns_tank_units g (u - 1) **
-  owns_tank_units g 1 **
-  pure (k == u - 1)
-{
-  open FStar.PCM;
-  unfold owns_tank_units;
-  rewrite (GPR.pts_to g u)
-       as (GPR.pts_to g (op (pcm_of n) (u - 1) 1));
-  GPR.share g (u-1) 1;  //leaving the arguments as _ _ causes a crash
-  fold (owns_tank_units g (u - 1));
-  fold (owns_tank_units g 1);
-  (hide #nat (u - 1))
-}
-
-
-// 
-// ghost
-// fn share_owns_tank_units_unit (#n:nat) (g:tank n) (#v:nat)
-// requires
-//   owns_tank_units g v
-// ensures
-//   owns_tank_units g v **
-//   owns_tank_units g 0
-// {
-//   open FStar.PCM;
-//   unfold owns_tank_units;
-//   rewrite (GPR.pts_to g v)
-//        as (GPR.pts_to g (op (pcm_of n) v 0));
-//   GPR.share g v 0; //leaving the arguments (v - 1) and 1 as _ _ causes a crash
-//   fold (owns_tank_units g v);
-//   fold owns_tank_units
-// }
-// 
 
 // The ghost state is a pair of tanks of capacity `n`
 [@@erasable]
@@ -208,8 +97,8 @@ let contributions
 : timeless_slprop
 = exists* (v g t:nat).
     pts_to r v **    
-    owns_tank_units gs.given g **
-    owns_tank_units gs.to_give t **
+    owns gs.given g **
+    owns gs.to_give t **
     pure (v == initial + g /\ g + t == n)
 
 
@@ -222,8 +111,8 @@ fn fold_contribs
     (v g t:nat)
 requires
     pts_to r v **    
-    owns_tank_units gs.given g **
-    owns_tank_units gs.to_give t **
+    owns gs.given g **
+    owns gs.to_give t **
     pure (v == initial + g /\ g + t == n)
 ensures
     contributions n initial gs r
@@ -235,22 +124,23 @@ ensures
 
 // can_give gs k: Knowledge that the given tank has at least `k` units
 // remaining to be filled
-let can_give #n (gs:ghost_state n) (k:nat) = owns_tank_units gs.given k
+let can_give #n (gs:ghost_state n) (k:nat) = owns gs.given k
 
 
 // has_given gs k: Knowledge that the to_give tank is at least `k` units
 // from being full
-let has_given #n (gs:ghost_state n) (k:nat) = owns_tank_units gs.to_give k
+let has_given #n (gs:ghost_state n) (k:nat) = owns gs.to_give k
 
 // A utility to share out can_give units
 
 ghost
 fn share_can_give (#n:nat) (gs:ghost_state n) (#i:nat { i > 0 })
 requires can_give gs i
-ensures can_give gs (i - 1) ** can_give gs 1
+ensures can_give gs (i - 1)
+ensures can_give gs 1
 {
   unfold can_give;
-  share_tank_units gs.given #(i - 1) #1;
+  Tank.share gs.given #(i - 1) #1;
   fold (can_give gs (i - 1));
   fold can_give;
 }
@@ -261,12 +151,13 @@ ensures can_give gs (i - 1) ** can_give gs 1
 
 ghost
 fn gather_has_given (#n:nat) (gs:ghost_state n) (#i #j:nat)
-requires has_given gs i ** has_given gs j
+requires has_given gs i
+requires has_given gs j
 ensures has_given gs (i + j)
 {
   unfold (has_given gs i);
   unfold (has_given gs j);
-  gather_tank_units gs.to_give;
+  Tank.gather gs.to_give;
   fold (has_given gs (i + j));
 }
 
@@ -281,12 +172,10 @@ returns gs:ghost_state capacity
 ensures contributions capacity initial gs r **
         can_give gs capacity 
 {
-  let given = GPR.alloc #_ #(pcm_of capacity) capacity;
-  fold (owns_tank_units given capacity);
-  share_tank_units given #capacity #0;
+  let given = Tank.alloc capacity;
+  Tank.share given #capacity #0;
 
-  let to_give = GPR.alloc #_ #(pcm_of capacity) capacity;
-  fold (owns_tank_units to_give capacity);
+  let to_give = Tank.alloc capacity;
   
   let gs : ghost_state capacity = { given; to_give };
   rewrite each given as gs.given;
@@ -309,9 +198,9 @@ ensures
 {
   unfold contributions;
   unfold has_given;
-  gather_tank_units gs.to_give;
-  drop_ (owns_tank_units gs.to_give _);
-  drop_ (owns_tank_units gs.given _);
+  Tank.gather gs.to_give;
+  drop_ (owns gs.to_give _);
+  drop_ (owns gs.given _);
 }
 
 
@@ -331,9 +220,9 @@ ensures
     contributions n initial gs r
 {
    unfold contributions;
-   unfold can_give;  gather_tank_units gs.given;
+   unfold can_give;  Tank.gather gs.given;
    atomic_incr r;
-   let remaining = share_one_tank_units gs.to_give; fold (has_given gs 1);
+   let remaining = Tank.share_one gs.to_give; fold (has_given gs 1);
    fold (contributions n initial gs r)
 }
 
@@ -375,8 +264,10 @@ fn par_atomic (#is #js #pf #pg #qf #qg:_)
       //  {| is_send pf, is_send pg, is_send qf, is_send qg |}
        (f: unit -> stt_atomic unit #Observable is pf (fun _ -> qf))
        (g: unit -> stt_atomic unit js pg (fun _ -> qg))
-  requires pf ** pg
-  ensures qf ** qg
+  requires pf
+  requires pg
+  ensures qf
+  ensures qg
 {
   admit (); // is_send
   par #pf #qf #pg #qg
@@ -388,8 +279,10 @@ fn par_atomic_l (#is #pf #pg #qf #qg:_)
       //  {| is_send pf, is_send pg, is_send qf, is_send qg |}
        (f: unit -> stt_atomic unit #Observable is pf (fun _ -> qf))
        (g: unit -> stt unit pg (fun _ -> qg))
-  requires pf ** pg
-  ensures qf ** qg
+  requires pf
+  requires pg
+  ensures qf
+  ensures qg
 {
   admit (); // is_send
   par #pf #qf #pg #qg
@@ -425,7 +318,6 @@ ensures  R.pts_to r ('i + 2)
     (fun _ -> increment #2 r ci);
   later_credit_buy 1;
   CI.gather ci; CI.cancel ci; // Collect back permission to the invariant and then cancel it
-  drop_ (inv _ _); //drop the other copy of the invariant; it is now useless
   // collect up the has_given predicates from each thread
   gather_has_given gs;
   // recover the postcondition by the main ghost state eliminator lemma
@@ -464,8 +356,8 @@ opens [CI.iname_of ci]
   fn _ {
     CI.unpack_cinv_vp ci;
     unfold contributions;
-    with u. assert (owns_tank_units gs.to_give u);
-    share_tank_units gs.to_give #u #0;
+    with u. assert (owns gs.to_give u);
+    Tank.share gs.to_give #u #0;
     fold (has_given gs 0);
     fold (contributions capacity initial gs r);
     CI.pack_cinv_vp #(contributions capacity initial gs r) ci;
@@ -512,7 +404,6 @@ decreases remaining
     par_atomic_l
       (fun _ -> increment #capacity r ci) //call increment in one thread
       (fun _ -> incr_n_aux #capacity r (remaining - 1) ci); //recursively call to spawn more
-    drop_ (inv _ _);
     CI.gather ci;
     gather_has_given gs;
     rewrite has_given gs (1 + (remaining - 1)) as has_given gs remaining;

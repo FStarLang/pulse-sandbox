@@ -17,7 +17,6 @@
 module PulseTutorial.AtomicsAndInvariants
 #lang-pulse
 open Pulse.Lib.Pervasives
-module T = FStar.Tactics
 module U32 = FStar.UInt32
 
 //owns$
@@ -27,9 +26,6 @@ let owns (x:ref U32.t) : timeless_slprop = exists* v. pts_to x v
 //owns_timeless$
 let owns_timeless (x:ref U32.t)
 : squash (timeless (owns x))
-by T.(norm [delta_only [`%owns; `%auto_squash]]; 
-      mapply (`FStar.Squash.return_squash);
-      mapply (`timeless_exists))
 = ()
 //end owns_timeless$
 
@@ -48,8 +44,8 @@ ensures inv i (owns r)
 //update_ref_atomic$
 atomic
 fn update_ref_atomic (r:ref U32.t) (i:iname) (v:U32.t)
-requires inv i (owns r) ** later_credit 1
-ensures inv i (owns r)
+preserves inv i (owns r)
+requires later_credit 1
 opens [i]
 {
   with_invariants_a unit emp_inames i (owns r) emp (fun _ -> emp)
@@ -64,8 +60,9 @@ opens [i]
 [@@allow_ambiguous]
 ghost
 fn pts_to_dup_impossible u#a (#a: Type u#a) (x:ref a)
-requires pts_to x 'v ** pts_to x 'u
-ensures  pts_to x 'v ** pts_to x 'u ** pure False
+preserves pts_to x 'v
+preserves pts_to x 'u
+ensures pure False
 {
     gather x;
     pts_to_perm_bound x;
@@ -79,7 +76,6 @@ fn double_open_bad (r:ref U32.t) (i:iname)
 requires inv i (owns r)
 ensures pure False
 {
-  dup (inv i (owns r)) ();
   later_credit_buy 1;
   with_invariants unit emp_inames i (owns r) (inv i (owns r) ** later_credit 1) (fun _ -> pure False) fn _ {
     with_invariants_a unit emp_inames i (owns r) (owns r) (fun _ -> pure False) fn _ {
@@ -91,14 +87,12 @@ ensures pure False
     };
     rewrite inv i (owns r) as owns r;
   };
-  drop_ (inv i (owns r));
 }
 //end double_open_bad$
 
 //update_ref$
 fn update_ref (r:ref U32.t) (i:iname) (v:U32.t)
-requires inv i (owns r)
-ensures inv i (owns r)
+preserves inv i (owns r)
 {                    
   later_credit_buy 1;
   update_ref_atomic r i v;
@@ -108,8 +102,7 @@ ensures inv i (owns r)
 //update_ref_fail$
 [@@expect_failure [228]]
 fn update_ref_fail (r:ref U32.t) (i:iname) (v:U32.t)
-requires inv i (owns r)
-ensures inv i (owns r)
+preserves inv i (owns r)
 {
   with_invariants unit emp_inames i (owns r) emp (fun _ -> emp) fn _ {
     unfold owns;
@@ -133,9 +126,9 @@ fn intro_readable (r:ref U32.t) (p:perm) (v:U32.t)
 //split_readable$
 ghost
 fn split_readable (r:ref U32.t) (i:iname)
-requires inv i (readable r)
+preserves inv i (readable r)
 requires later_credit 1
-ensures inv i (readable r) ** readable r
+ensures readable r
 opens [i]
 {
   with_invariants_g unit emp_inames i (readable r) emp (fun _ -> readable r) fn _ {
